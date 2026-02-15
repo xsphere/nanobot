@@ -874,5 +874,41 @@ def status():
                 console.print(f"{spec.label}: {'[green]✓[/green]' if has_key else '[dim]not set[/dim]'}")
 
 
+@app.command("evoquant-run")
+def evoquant_run(
+    run_id: str = typer.Option("manual", "--run-id", help="Run id for output folder"),
+    generations: int = typer.Option(4, "--generations", min=1, help="Evolution generations"),
+    population_size: int = typer.Option(12, "--population", min=4, help="Population size"),
+    top_k: int = typer.Option(3, "--top-k", min=1, help="Top candidates to keep"),
+    seed: int = typer.Option(42, "--seed", help="Random seed"),
+    output_dir: str = typer.Option(
+        "workspace/runs/evoquant", "--output-dir", help="Output directory"
+    ),
+):
+    """Run EvoQuant nightly evolution pilot locally."""
+    from nanobot.evoquant import TaskConfig, run_evolution
+
+    cfg = TaskConfig(
+        run_id=run_id,
+        generations=generations,
+        population_size=population_size,
+        top_k=top_k,
+        seed=seed,
+        output_dir=output_dir,
+    )
+    result = run_evolution(cfg)
+
+    console.print("\n[bold cyan]EvoQuant run finished[/bold cyan]")
+    console.print(f"Run ID: {result.config.run_id}")
+    console.print(f"Candidates passed risk gate: {len(result.top_candidates)}")
+    if result.top_candidates:
+        best = result.top_candidates[0]
+        console.print(
+            f"Best fitness={best.metrics.fitness:.4f}, "
+            f"DSR={best.metrics.dsr:.4f}, MDD={best.metrics.mdd:.4f}"
+        )
+    console.print(f"Memory counters: {result.memory_updates}")
+
+
 if __name__ == "__main__":
     app()
